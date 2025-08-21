@@ -85,6 +85,8 @@ public class CourseAccessServiceImpl {
 
         String cachedCourseForUser = redisCacheMgr.getFromCache(Constants.ACCESS_KEY + userId);
         if (cachedCourseForUser != null && !cachedCourseForUser.isEmpty()){
+            //Check this string is equal to = COURSE_NOT_AVAILABLE
+            //if so, return empty response
             try {
                 response.getResult().put(Constants.CONTENT, mapper.readValue(
                         cachedCourseForUser,
@@ -115,6 +117,7 @@ public class CourseAccessServiceImpl {
                 }
                 response.getResult().put(Constants.CONTENT, userCourses);
             } else {
+                //Put into user redis saying "COURSE_NOT_AVAILABLE"
                 response.getResult().put(Constants.CONTENT, new ArrayList<>());
             }
         } catch (Exception e) {
@@ -143,7 +146,9 @@ public class CourseAccessServiceImpl {
                 Map<String, Object> eligibleCourseMap = Map.of(
                         Constants.IDENTIFIER, rule.getContextId(),
                         Constants.COURSE_CATEGORY, rule.getContextIdType(),
+                        // this shouldn't be contextData
                         Constants.CONTEXT_DATA, contentDetails);
+                //Add all the attributes from contentDetails into eligibleCourseMap.addAll
                 userCourses.add(eligibleCourseMap);
             }
         }
@@ -178,6 +183,7 @@ public class CourseAccessServiceImpl {
             }
             for (Map<String, Object> criteria : criteriaList) {
                 String criteriaKey = (String) criteria.get(Constants.CRITERIA_KEY);
+                //This should be BitSet -- since we are reading it from cachedAccessSettingRules hashMap
                 List<Integer> criteriaValue = (List<Integer>) criteria.get(Constants.CRITERIA_VALUE);
                 Integer userCriteriaValue = userProfile.get(criteriaKey);
                 if (userCriteriaValue == null || criteriaValue.get(0) != userCriteriaValue) {

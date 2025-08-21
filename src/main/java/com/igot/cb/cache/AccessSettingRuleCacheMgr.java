@@ -85,6 +85,8 @@ public class AccessSettingRuleCacheMgr {
         try {
             Map<String, String> cachedRules = redisCacheMgr.getAllCachedAccessRules(ACCESS_SETTINGS_CACHE_KEY);
             if (MapUtils.isNotEmpty(cachedRules)) {
+                //Redis should have List<Integer> for criteria Value.
+                //Do not use cachedAccessSettingRules
                 cachedAccessSettingRules = cachedRules.entrySet().stream()
                         .collect(Collectors.toMap(
                                 Map.Entry::getKey,
@@ -93,6 +95,9 @@ public class AccessSettingRuleCacheMgr {
                 List<Map<String, Object>> accessSettingRuleMapList = cassandraOperation.getRecordsByProperties(
                         Constants.KEYSPACE_SUNBIRD_COURSE, Constants.ACCESS_SETTINGS_RULES_TABLE_V2, null,
                         null, null);
+                //Use temporary object to read from accessSettingRuleMapList and store them in Redis
+                //This will have List<Integer> for criteriaValue
+                //Do not use cachedAccessSettingRules
                 cachedAccessSettingRules = accessSettingRuleMapList.stream()
                         .map(record -> new CachedAccessSettingRule(
                                 (String) record.get("contextid"),
@@ -109,6 +114,8 @@ public class AccessSettingRuleCacheMgr {
                             rule.getContextData());
                 }
             }
+            //Add a logic here to process the value read from redis / cassandra 
+            //Convert List<Integer> to BitSet and then save into cachedAccessSettingRules
             log.info("Access setting rules loaded into cache successfully. Number of rules loaded: {}",
                     cachedAccessSettingRules.size());
         } catch (Exception e) {
